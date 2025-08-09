@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}홈 - Cafe24 Automation Hub{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-home"></i> Cafe24 자동화 허브</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">안전하고 효율적인 Cafe24 쇼핑몰 관리 시스템</p>
+                
+                {% if not is_authenticated %}
+                <div class="alert alert-warning" role="alert">
+                    <h5><i class="fas fa-exclamation-triangle"></i> 인증 필요</h5>
+                    <p>Cafe24 API를 사용하기 위해 먼저 인증을 완료해주세요.</p>
+                    <a href="/auth/login" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Cafe24 로그인
+                    </a>
+                </div>
+                {% else %}
+                <div class="alert alert-success" role="alert">
+                    <h5><i class="fas fa-check-circle"></i> 인증 완료</h5>
+                    <p>Cafe24 API에 성공적으로 연결되었습니다.</p>
+                    <a href="/dashboard" class="btn btn-success">
+                        <i class="fas fa-tachometer-alt"></i> 대시보드로 이동
+                    </a>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <h5>주요 기능</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-box text-primary"></i> 상품 관리 및 동기화</li>
+                            <li><i class="fas fa-tags text-success"></i> 가격 일괄 업데이트</li>
+                            <li><i class="fas fa-warehouse text-info"></i> 재고 관리</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-search text-warning"></i> 상품 검색</li>
+                            <li><i class="fas fa-chart-line text-danger"></i> 실시간 모니터링</li>
+                            <li><i class="fas fa-shield-alt text-secondary"></i> 안전한 토큰 관리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Status Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> 시스템 상태</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Mall ID:</span>
+                    <code>{{ mall_id }}</code>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>환경:</span>
+                    <span class="badge bg-{% if environment == 'production' %}danger{% else %}warning{% endif %}">
+                        {{ environment }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>연결 상태:</span>
+                    {% if is_authenticated %}
+                    <span class="badge bg-success">연결됨</span>
+                    {% else %}
+                    <span class="badge bg-danger">미연결</span>
+                    {% endif %}
+                </div>
+                
+                {% if token_info and is_authenticated %}
+                <hr>
+                <h6>토큰 정보</h6>
+                {% if token_info.access_token %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small>Access Token:</small>
+                    <small class="badge bg-{% if token_info.access_token.is_expired %}danger{% else %}success{% endif %}">
+                        {% if token_info.access_token.is_expired %}만료됨{% else %}유효함{% endif %}
+                    </small>
+                </div>
+                {% if not token_info.access_token.is_expired %}
+                <div class="progress mb-2" style="height: 4px;">
+                    <div class="progress-bar" style="width: {% if token_info.access_token.expires_in_seconds > 3600 %}100{% else %}{{ (token_info.access_token.expires_in_seconds / 3600) * 100 }}{% endif %}%"></div>
+                </div>
+                <small class="text-muted">
+                    {{ (token_info.access_token.expires_in_seconds / 60) | round }} 분 남음
+                </small>
+                {% endif %}
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> 빠른 작업</h6>
+            </div>
+            <div class="card-body">
+                {% if is_authenticated %}
+                <div class="d-grid gap-2">
+                    <a href="/products" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-box"></i> 상품 관리
+                    </a>
+                    <a href="/dashboard" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-tachometer-alt"></i> 대시보드
+                    </a>
+                    <button class="btn btn-outline-info btn-sm" onclick="testConnection()">
+                        <i class="fas fa-plug"></i> 연결 테스트
+                    </button>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-3">로그인 후 사용할 수 있습니다</p>
+                <div class="d-grid">
+                    <a href="/auth/login" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> 로그인
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_authenticated %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> API 상태</h6>
+            </div>
+            <div class="card-body" id="api-status">
+                <div class="loading text-center">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">API 상태 확인 중...</span>
+                </div>
+                <div id="api-status-content" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if is_authenticated %}
+<script>
+// Test API connection
+async function testConnection() {
+    showLoading('#api-status');
+    
+    try {
+        const response = await fetch('/api/products?limit=1');
+        const data = await response.json();
+        
+        if (response.ok) {
+            showAlert('API 연결 테스트 성공!', 'success');
+            loadAPIStatus();
+        } else {
+            showAlert('API 연결 실패: ' + data.detail, 'danger');
+        }
+    } catch (error) {
+        showAlert('API 연결 오류: ' + error.message, 'danger');
+    }
+    
+    hideLoading('#api-status');
+}
+
+// Load API status
+async function loadAPIStatus() {
+    const statusDiv = $('#api-status-content');
+    const loadingDiv = $('#api-status .loading');
+    
+    loadingDiv.show();
+    statusDiv.hide();
+    
+    try {
+        const response = await fetch('/api/products?limit=3');
+        const data = await response.json();
+        
+        if (response.ok) {
+            const products = data.products || [];
+            let html = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-success">${products.length}</h5>
+                            <small class="text-muted">최근 상품</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-info">API v2</h5>
+                            <small class="text-muted">API 버전</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-primary">연결됨</h5>
+                            <small class="text-muted">상태</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (products.length > 0) {
+                html += '<hr><h6>최근 상품 샘플:</h6><ul class="list-unstyled">';
+                products.slice(0, 3).forEach(product => {
+                    html += `<li><small><strong>${product.product_name || 'N/A'}</strong> - ${product.price || 'N/A'}원</small></li>`;
+                });
+                html += '</ul>';
+            }
+            
+            statusDiv.html(html);
+        } else {
+            statusDiv.html(`<div class="alert alert-danger">API 오류: ${data.detail}</div>`);
+        }
+    } catch (error) {
+        statusDiv.html(`<div class="alert alert-danger">연결 오류: ${error.message}</div>`);
+    }
+    
+    loadingDiv.hide();
+    statusDiv.show();
+}
+
+// Load API status on page load
+$(document).ready(function() {
+    loadAPIStatus();
+});
+</script>
+{% endif %}
+{% endblock %}

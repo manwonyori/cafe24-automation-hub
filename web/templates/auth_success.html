@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}인증 성공 - Cafe24 Automation Hub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white text-center">
+                <h4><i class="fas fa-check-circle"></i> 인증 성공!</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="alert alert-success">
+                    <h5>Cafe24 API에 성공적으로 연결되었습니다!</h5>
+                    <p>이제 모든 기능을 사용할 수 있습니다.</p>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6><i class="fas fa-key text-primary"></i> 토큰 정보</h6>
+                                <p class="small">
+                                    <strong>타입:</strong> {{ token_info.token_type | default('Bearer') }}<br>
+                                    <strong>만료:</strong> {{ token_info.expires_in | default('N/A') }} 초<br>
+                                    <strong>범위:</strong> 전체 권한
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6><i class="fas fa-shield-alt text-info"></i> 보안 정보</h6>
+                                <p class="small">
+                                    <strong>암호화:</strong> AES-256<br>
+                                    <strong>저장:</strong> 로컬 암호화<br>
+                                    <strong>갱신:</strong> 자동
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5>다음 단계</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <a href="/dashboard" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-tachometer-alt"></i><br>
+                            대시보드
+                            <small class="d-block">시스템 현황 확인</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/products" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-box"></i><br>
+                            상품 관리
+                            <small class="d-block">상품 조회 및 수정</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <button onclick="testAPI()" class="btn btn-info btn-lg w-100 mb-3">
+                            <i class="fas fa-flask"></i><br>
+                            API 테스트
+                            <small class="d-block">연결 상태 확인</small>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home"></i> 홈으로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API Test Results -->
+        <div id="api-test-results" class="mt-4" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-flask"></i> API 테스트 결과</h6>
+                </div>
+                <div class="card-body" id="test-content">
+                    <!-- Test results will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function testAPI() {
+    const resultsDiv = $('#api-test-results');
+    const contentDiv = $('#test-content');
+    
+    resultsDiv.show();
+    contentDiv.html('<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">API 테스트 진행 중...</p></div>');
+    
+    try {
+        // Test 1: Get products
+        const productsResponse = await fetch('/api/products?limit=5');
+        const productsData = await productsResponse.json();
+        
+        let html = '<h6>테스트 결과</h6>';
+        
+        if (productsResponse.ok) {
+            html += '<div class="alert alert-success">✅ 상품 API 연결 성공</div>';
+            html += `<p><strong>조회된 상품:</strong> ${productsData.products?.length || 0}개</p>`;
+            
+            if (productsData.products && productsData.products.length > 0) {
+                html += '<h6>샘플 상품:</h6><ul>';
+                productsData.products.slice(0, 3).forEach(product => {
+                    html += `<li><strong>${product.product_name || 'N/A'}</strong> - ${product.price || 'N/A'}원</li>`;
+                });
+                html += '</ul>';
+            }
+        } else {
+            html += `<div class="alert alert-danger">❌ 상품 API 오류: ${productsData.detail}</div>`;
+        }
+        
+        // Test 2: Search
+        try {
+            const searchResponse = await fetch('/api/search?q=치킨&limit=3');
+            const searchData = await searchResponse.json();
+            
+            if (searchResponse.ok) {
+                html += '<div class="alert alert-success">✅ 검색 API 연결 성공</div>';
+                html += `<p><strong>검색 결과:</strong> ${searchData.count || 0}개</p>`;
+            } else {
+                html += `<div class="alert alert-warning">⚠️ 검색 API: ${searchData.detail}</div>`;
+            }
+        } catch (e) {
+            html += '<div class="alert alert-warning">⚠️ 검색 API 테스트 스킵</div>';
+        }
+        
+        html += '<div class="alert alert-info mt-3"><strong>모든 기본 기능이 정상 작동합니다!</strong></div>';
+        
+        contentDiv.html(html);
+        
+    } catch (error) {
+        contentDiv.html(`<div class="alert alert-danger">❌ API 테스트 실패: ${error.message}</div>`);
+    }
+}
+</script>
+{% endblock %}

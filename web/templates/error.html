@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}오류 - Cafe24 Automation Hub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4><i class="fas fa-exclamation-triangle"></i> 오류 발생</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5>처리 중 오류가 발생했습니다</h5>
+                    <p><strong>오류 내용:</strong> {{ error }}</p>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>해결 방법:</h6>
+                    <ul>
+                        <li>네트워크 연결을 확인해주세요</li>
+                        <li>API 인증 상태를 확인해주세요</li>
+                        <li>잠시 후 다시 시도해주세요</li>
+                        <li>문제가 계속되면 관리자에게 문의하세요</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home"></i> 홈으로 돌아가기
+                    </a>
+                    <a href="/auth/login" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt"></i> 다시 로그인
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
