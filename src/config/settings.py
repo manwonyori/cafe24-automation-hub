@@ -106,9 +106,13 @@ class Settings:
     @property
     def redirect_uri(self) -> str:
         """Get OAuth redirect URI"""
-        if os.getenv('RENDER'):
-            return "https://cafe24-automation.onrender.com/callback"
-        return "http://localhost:8000/callback"
+        # Check for explicit environment variable first
+        if os.getenv('CAFE24_REDIRECT_URI'):
+            return os.getenv('CAFE24_REDIRECT_URI')
+        # Fallback to default based on environment
+        if os.getenv('RENDER') or self.environment == 'production':
+            return "https://cafe24-automation.onrender.com/auth/callback"
+        return "http://localhost:3000/auth/callback"
     
     @property
     def is_production(self) -> bool:
