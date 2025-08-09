@@ -1,9 +1,9 @@
 services:
   - type: web
     name: cafe24-automation-hub
-    runtime: python
+    env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn web.app:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:application --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
