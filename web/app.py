@@ -34,7 +34,21 @@ app = FastAPI(
 )
 
 # Setup templates
-templates = Jinja2Templates(directory="web/templates")
+import os
+from pathlib import Path
+
+# Get the absolute path to templates directory
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+
+# Check if templates directory exists
+if not TEMPLATES_DIR.exists():
+    # Try alternate path for production
+    TEMPLATES_DIR = Path("/opt/render/project/src/web/templates")
+    if not TEMPLATES_DIR.exists():
+        logger.error(f"Templates directory not found. Tried: {BASE_DIR / 'templates'} and {TEMPLATES_DIR}")
+
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Global instances
 auth_manager = AuthManager()
