@@ -126,11 +126,9 @@ class Settings:
     
     def get_scopes(self) -> List[str]:
         """Get required API scopes"""
-        # Start with minimal scopes - add more as needed
-        return [
-            "mall.read_product",
-            "mall.write_product"
-        ]
+        # Return empty list to use default scopes
+        # Cafe24 will use the scopes configured in the app settings
+        return []
     
     def to_dict(self) -> dict:
         """Convert settings to dictionary (excluding sensitive data)"""
