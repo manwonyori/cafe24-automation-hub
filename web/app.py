@@ -103,22 +103,20 @@ async def get_product_api():
     return product_api
 
 # Routes
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    """Home page"""
+@app.get("/")
+async def home():
+    """Home page - returns JSON for now"""
     is_authenticated = auth_manager.is_authenticated()
-    token_info = None
     
-    if is_authenticated:
-        token_info = auth_manager.get_token_info()
-    
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "is_authenticated": is_authenticated,
-        "token_info": token_info,
+    return {
+        "message": "Cafe24 Automation Hub",
+        "status": "running",
+        "authenticated": is_authenticated,
         "mall_id": settings.cafe24_mall_id,
-        "environment": settings.environment
-    })
+        "environment": settings.environment,
+        "login_url": "/auth/login",
+        "health_url": "/health"
+    }
 
 @app.get("/auth/login")
 async def login():
@@ -142,15 +140,15 @@ async def auth_callback(
     # Check for OAuth errors first
     if error:
         error_msg = f"{error}: {error_description}" if error_description else error
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": error_msg
+        return JSONResponse(status_code=400, content={
+            "error": True,
+            "message": error_msg
         })
     
     if not code:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": "Authorization code not provided"
+        return JSONResponse(status_code=400, content={
+            "error": True,
+            "message": "Authorization code not provided"
         })
     
     try:
