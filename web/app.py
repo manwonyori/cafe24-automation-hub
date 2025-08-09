@@ -117,8 +117,22 @@ async def login():
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 @app.get("/auth/callback")
-async def auth_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None):
+async def auth_callback(
+    request: Request, 
+    code: Optional[str] = None, 
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    error_description: Optional[str] = None
+):
     """Handle OAuth callback"""
+    # Check for OAuth errors first
+    if error:
+        error_msg = f"{error}: {error_description}" if error_description else error
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": error_msg
+        })
+    
     if not code:
         return templates.TemplateResponse("error.html", {
             "request": request,

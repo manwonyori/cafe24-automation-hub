@@ -126,22 +126,10 @@ class Settings:
     
     def get_scopes(self) -> List[str]:
         """Get required API scopes"""
+        # Start with minimal scopes - add more as needed
         return [
             "mall.read_product",
-            "mall.write_product",
-            "mall.read_order",
-            "mall.write_order",
-            "mall.read_customer",
-            "mall.read_category",
-            "mall.write_category",
-            "mall.read_collection",
-            "mall.write_collection",
-            "mall.read_supply",
-            "mall.write_supply",
-            "mall.read_personal",
-            "mall.write_personal",
-            "mall.read_store",
-            "mall.write_store"
+            "mall.write_product"
         ]
     
     def to_dict(self) -> dict:
