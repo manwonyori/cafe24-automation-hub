@@ -104,19 +104,42 @@ async def get_product_api():
 
 # Routes
 @app.get("/")
-async def home():
-    """Home page - returns JSON for now"""
+async def home(request: Request):
+    """Home page"""
     is_authenticated = auth_manager.is_authenticated()
     
-    return {
-        "message": "Cafe24 Automation Hub",
-        "status": "running",
-        "authenticated": is_authenticated,
-        "mall_id": settings.cafe24_mall_id,
-        "environment": settings.environment,
-        "login_url": "/auth/login",
-        "health_url": "/health"
-    }
+    # For production, return JSON response to avoid template issues
+    if settings.is_production or os.getenv('RENDER'):
+        return {
+            "message": "Cafe24 Automation Hub",
+            "status": "running",
+            "authenticated": is_authenticated,
+            "mall_id": settings.cafe24_mall_id,
+            "environment": settings.environment,
+            "login_url": "/auth/login",
+            "health_url": "/health",
+            "api_docs": "/docs"
+        }
+    
+    # For local development, use templates
+    try:
+        return templates.TemplateResponse("home.html", {
+            "request": request,
+            "is_authenticated": is_authenticated,
+            "mall_id": settings.cafe24_mall_id,
+            "environment": settings.environment
+        })
+    except Exception as e:
+        logger.error(f"Template error: {e}")
+        return {
+            "message": "Cafe24 Automation Hub",
+            "status": "running",
+            "authenticated": is_authenticated,
+            "mall_id": settings.cafe24_mall_id,
+            "environment": settings.environment,
+            "login_url": "/auth/login",
+            "health_url": "/health"
+        }
 
 @app.get("/auth/login")
 async def login():
@@ -162,17 +185,40 @@ async def auth_callback(
         
         logger.info("OAuth authentication successful")
         
-        return templates.TemplateResponse("auth_success.html", {
-            "request": request,
-            "token_info": token_data
-        })
+        # For production, return JSON or redirect
+        if settings.is_production or os.getenv('RENDER'):
+            return RedirectResponse(url="/")
+        
+        # For local development, use templates
+        try:
+            return templates.TemplateResponse("auth_success.html", {
+                "request": request,
+                "token_info": token_data
+            })
+        except:
+            return RedirectResponse(url="/")
         
     except Exception as e:
         logger.error(f"OAuth callback failed: {e}")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": f"Authentication failed: {str(e)}"
-        })
+        
+        # For production, return JSON error
+        if settings.is_production or os.getenv('RENDER'):
+            return JSONResponse(status_code=400, content={
+                "error": True,
+                "message": f"Authentication failed: {str(e)}"
+            })
+        
+        # For local development, use templates
+        try:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Authentication failed: {str(e)}"
+            })
+        except:
+            return JSONResponse(status_code=400, content={
+                "error": True,
+                "message": f"Authentication failed: {str(e)}"
+            })
 
 @app.get("/auth/logout")
 async def logout():
@@ -279,31 +325,78 @@ async def search_products(
         raise HTTPException(status_code=500, detail=str(e))
 
 # Dashboard Routes
-@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/dashboard")
 async def dashboard(request: Request, client: Cafe24Client = Depends(get_authenticated_client)):
     """Main dashboard"""
     try:
         # Get basic API info
         api_info = await client.get_api_info()
         
-        return templates.TemplateResponse("dashboard.html", {
-            "request": request,
-            "api_info": api_info,
-            "mall_id": settings.cafe24_mall_id
-        })
+        # For production, return JSON
+        if settings.is_production or os.getenv('RENDER'):
+            return {
+                "api_info": api_info,
+                "mall_id": settings.cafe24_mall_id,
+                "authenticated": True
+            }
+        
+        # For local development, use templates
+        try:
+            return templates.TemplateResponse("dashboard.html", {
+                "request": request,
+                "api_info": api_info,
+                "mall_id": settings.cafe24_mall_id
+            })
+        except:
+            return {
+                "api_info": api_info,
+                "mall_id": settings.cafe24_mall_id,
+                "authenticated": True
+            }
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": f"Dashboard error: {str(e)}"
-        })
+        
+        if settings.is_production or os.getenv('RENDER'):
+            raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
+        
+        try:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Dashboard error: {str(e)}"
+            })
+        except:
+            raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
 
-@app.get("/products", response_class=HTMLResponse)
+@app.get("/products")
 async def products_page(request: Request):
     """Products management page"""
-    return templates.TemplateResponse("products.html", {
-        "request": request
-    })
+    # For production, return JSON
+    if settings.is_production or os.getenv('RENDER'):
+        return {
+            "message": "Products API",
+            "endpoints": {
+                "list": "/api/products",
+                "detail": "/api/products/{product_no}",
+                "search": "/api/search?q={query}",
+                "update_price": "/api/products/{product_no}/price"
+            }
+        }
+    
+    # For local development, use templates
+    try:
+        return templates.TemplateResponse("products.html", {
+            "request": request
+        })
+    except:
+        return {
+            "message": "Products API",
+            "endpoints": {
+                "list": "/api/products",
+                "detail": "/api/products/{product_no}",
+                "search": "/api/search?q={query}",
+                "update_price": "/api/products/{product_no}/price"
+            }
+        }
 
 # Health check
 @app.get("/health")
