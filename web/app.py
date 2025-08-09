@@ -304,6 +304,19 @@ async def health_check():
         "authenticated": auth_manager.is_authenticated()
     }
 
+# API info endpoint for root when templates fail
+@app.get("/api")
+async def api_info():
+    """API information endpoint"""
+    return {
+        "message": "Cafe24 Automation Hub API",
+        "version": "2.0.0",
+        "status": "running",
+        "environment": settings.environment,
+        "mall_id": settings.cafe24_mall_id,
+        "authenticated": auth_manager.is_authenticated()
+    }
+
 # Run the app
 def run_server():
     """Run the FastAPI server"""
